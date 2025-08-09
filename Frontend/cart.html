@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ShopEase | Cart</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="script1.js"></script>
+   <script
+    defer
+    src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"
+  ></script>
+</head>
+<body class="bg-gray-100">
+
+<div x-data x-init="$store.auth.fetchSession()">
+
+    <!-- Navbar -->
+    <nav
+      x-show="!$store.auth.loading"
+      class="bg-blue-700 text-white px-4 py-3 flex justify-between items-center"
+    >
+      <a href="home.html" class="text-xl font-bold">ShopEase</a>
+      <div class="space-x-4 flex items-center">
+        <a href="allproducts.html" class="hover:underline">Shop</a>
+        <a href="cart.html" class="hover:underline">Orders</a>
+
+        <!-- Login if not logged in -->
+        <a
+          x-show="!$store.auth.username"
+          href="login.html"
+          class="hover:underline"
+          >Login</a
+        >
+
+        
+
+        <!-- Username + Logout if logged in -->
+        <span x-show="$store.auth.username" class="font-medium">
+          Hi, <span x-text="$store.auth.username"></span>!
+        </span>
+        <button
+          x-show="$store.auth.username"
+          @click="$store.auth.logout()"
+          class="bg-red-500 px-3 py-1 rounded hover:bg-red-600"
+        >
+          Logout
+        </button>
+      </div>
+    </nav>
+</div>
+
+
+  <div class="container mx-auto p-4">
+
+    <div id="cartItems" class="space-y-4"></div>
+
+    <div class="mt-6 text-right">
+      <p id="totalAmount" class="text-xl font-bold text-green-700">Total: ₹0</p>
+      <button onclick="checkout()" class="mt-4 bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">Proceed to Checkout</button>
+    </div>
+  </div>
+
+  <script>
+    const cart = JSON.parse(localStorage.getItem("cart") || "[]");
+
+    function renderCart() {
+      const cartContainer = document.getElementById("cartItems");
+      cartContainer.innerHTML = "";
+      let total = 0;
+
+      if (cart.length === 0) {
+        cartContainer.innerHTML = `<p class="text-center text-gray-600">Your cart is empty.</p>`;
+        document.getElementById("totalAmount").innerText = `Total: ₹0`;
+        return;
+      }
+
+      cart.forEach((item, index) => {
+        total += item.price;
+        const itemDiv = document.createElement("div");
+        itemDiv.className = "bg-white rounded shadow p-4 flex justify-between items-center";
+        itemDiv.innerHTML = `
+          <div>
+            <h2 class="text-lg font-semibold">${item.name}</h2>
+            <p class="text-green-600 font-bold">₹${item.price.toLocaleString()}</p>
+          </div>
+          <button onclick="removeItem(${index})" class="text-red-500 hover:text-red-700">Remove ❌</button>
+        `;
+        cartContainer.appendChild(itemDiv);
+      });
+
+      document.getElementById("totalAmount").innerText = `Total: ₹${total.toLocaleString()}`;
+    }
+
+    function removeItem(index) {
+      cart.splice(index, 1);
+      localStorage.setItem("cart", JSON.stringify(cart));
+      renderCart();
+    }
+
+    function checkout() {
+      alert("Thanks for shopping with ShopEase! Your order has been placed.");
+      localStorage.removeItem("cart");
+      renderCart();
+    }
+
+    renderCart();
+  </script>
+</body>
+</html>
+
+
+

@@ -1,0 +1,89 @@
+package com.example.ProjectEcommerce.Controller;
+
+import com.example.ProjectEcommerce.Entity.User;
+import com.example.ProjectEcommerce.Service.UserService;
+import jakarta.servlet.http.HttpSession;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
+
+@RestController
+@CrossOrigin(origins = "*")
+@RequestMapping("/api/auth")
+ // Allow requests from frontend
+public class AuthController {
+
+    @Autowired
+    private UserService userService;
+
+    // ✅ Login
+    @PostMapping("/login")
+    public ResponseEntity<String> login(@RequestBody LoginRequest request, HttpSession session) {
+        User user = userService.findByEmail(request.getEmail());
+        if (user != null && user.getPassword().equals(request.getPassword())) {
+            session.setAttribute("username", user.getUsername());
+            session.setAttribute("role", user.getRole());
+            return ResponseEntity.ok("Login successful");
+        }
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials");
+    }
+
+    // ✅ Register
+    @PostMapping("/register")
+    public ResponseEntity<String> register(@RequestBody User user) {
+        if (userService.findByEmail(user.getEmail()) != null) {
+            return ResponseEntity.badRequest().body("Email already registered");
+        }
+        userService.register(user);
+        return ResponseEntity.ok("Registration successful");
+    }
+
+    // ✅ Logout
+    @GetMapping("/logout")
+    public ResponseEntity<String> logout(HttpSession session) {
+        session.invalidate();
+        return ResponseEntity.ok("Logged out");
+    }
+
+    // ✅ Session info
+    @GetMapping("/session")
+    public ResponseEntity<?> getSessionInfo(HttpSession session) {
+        String username = (String) session.getAttribute("username");
+        String role = (String) session.getAttribute("role");
+
+        if (username != null && role != null) {
+            return ResponseEntity.ok().body(Map.of(
+                "username", username,
+                "role", role
+            ));
+        } else {
+            return ResponseEntity.status(401).body("No active session");
+        }
+    }
+
+    // ✅ Inner class for login request
+    public static class LoginRequest {
+        private String email;
+        private String password;
+
+        public String getEmail() { return email; }
+        public void setEmail(String email) { this.email = email; }
+
+        public String getPassword() { return password; }
+        public void setPassword(String password) { this.password = password; }
+    }
+    
+    @GetMapping("/check-session")
+    @ResponseBody
+    public String checkSession(HttpSession session) {
+        if (session.isNew()) {
+            return "New session created. Session ID: " + session.getId();
+        } else {
+            return "Existing session. Session ID: " + session.getId();
+        }
+    }
+
+}

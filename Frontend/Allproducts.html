@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ShopEase | Products</title>
+    <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+    
+    * {
+      font-family: 'Inter', sans-serif;
+    }
+
+  </style>
+   <script src="script1.js"></script>
+   <script
+    defer
+    src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"
+  ></script>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+
+<div x-data x-init="$store.auth.fetchSession()">
+
+    <!-- Navbar -->
+    <nav
+      x-show="!$store.auth.loading"
+      class="bg-blue-700 text-white px-4 py-3 flex justify-between items-center"
+    >
+      <a href="home.html" class="text-xl font-bold">ShopEase</a>
+      <div class="space-x-4 flex items-center">
+        <a href="allproducts.html" class="hover:underline">Shop</a>
+        <a href="cart.html" class="hover:underline">Orders</a>
+
+        <!-- Login if not logged in -->
+        <a
+          x-show="!$store.auth.username"
+          href="login.html"
+          class="hover:underline"
+          >Login</a
+        >
+
+        
+
+        <!-- Username + Logout if logged in -->
+        <span x-show="$store.auth.username" class="font-medium">
+          Hi, <span x-text="$store.auth.username"></span>!
+        </span>
+        <button
+          x-show="$store.auth.username"
+          @click="$store.auth.logout()"
+          class="bg-red-500 px-3 py-1 rounded hover:bg-red-600"
+        >
+          Logout
+        </button>
+      </div>
+    </nav>
+</div>
+
+  <div class="container mx-auto p-4">
+      
+
+    <!-- 🔍 Search, Sort, Category -->
+    <div class="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6">
+      <input id="searchInput" type="text" placeholder="Search products..." class="w-full sm:w-1/3 px-4 py-2 border rounded" oninput="renderProducts()">
+      <select id="sortSelect" class="px-4 py-2 border rounded" onchange="renderProducts()">
+        <option value="">Sort by</option>
+        <option value="asc">Price: Low to High</option>
+        <option value="desc">Price: High to Low</option>
+      </select>
+      <select id="categorySelect" class="px-4 py-2 border rounded" onchange="renderProducts()">
+        <option value="">All Categories</option>
+        <option value="Phone">Phone</option>
+        <option value="Laptop">Laptop</option>
+        <option value="Watch">Watch</option>
+        <option value="Camera">Camera</option>
+        <option value="Headphones">Headphones</option>
+      </select>
+    </div>
+
+    <!-- 🛒 Cart -->
+    <div class="text-right text-lg mb-4">
+      🛒 <a href="cart.html" class="mt-4 bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">View Cart</a>: <span id="cartCount">0</span>
+    </div>
+
+    <!-- 🛍️ Product Grid -->
+    <div id="productGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6"></div>
+
+    <!-- 🔢 Pagination -->
+    <div class="flex justify-center mt-6 space-x-2">
+      <button onclick="prevPage()" class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">Prev</button>
+      <button onclick="nextPage()" class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">Next</button>
+    </div>
+
+    <!-- 🔍 Modal for Review -->
+    <div id="productModal" class="fixed inset-0 bg-black bg-opacity-60 hidden items-center justify-center z-50">
+      <div class="bg-white rounded p-6 w-full max-w-md relative">
+        <button onclick="closeModal()" class="absolute top-2 right-2 text-xl">🔙</button>
+        <img id="modalImage" class="w-full h-64 object-contain mb-4">
+        <h2 id="modalName" class="text-xl font-bold mb-2"></h2>
+        <p id="modalPrice" class="text-green-600 font-bold mb-2"></p>
+        <textarea id="modalReview" placeholder="Write a review..." class="w-full p-2 border mb-2"></textarea>
+        <button onclick="saveReview()" class="bg-blue-500 text-white px-4 py-2 rounded">Submit Review</button>
+        <p id="savedReview" class="mt-2 text-gray-700"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ✅ SCRIPT goes here -->
+  <script>
+  let products = [];
+  let cart = JSON.parse(localStorage.getItem("cart") || "[]");
+  let currentPage = 1;
+  const itemsPerPage = 12;
+
+  async function fetchProducts() {
+    try {
+      const response = await fetch('http://localhost:8080/api/products');
+      const data = await response.json();
+      products = data.map(p => ({
+        id: p.id,
+        name: p.name,
+        price: p.price,
+        category: p.category,
+        image: p.imageUrl,
+        rating: Math.floor(Math.random() * 2) + 4 // Optional: fake rating
+      }));
+      renderProducts();
+    } catch (error) {
+      console.error("Failed to fetch products:", error);
+    }
+  }
+
+  function renderProducts() {
+    const search = document.getElementById("searchInput").value.toLowerCase();
+    const sort = document.getElementById("sortSelect").value;
+    const category = document.getElementById("categorySelect").value;
+
+    let filtered = products.filter(p =>
+      p.name.toLowerCase().includes(search) &&
+      (category === "" || p.category === category)
+    );
+
+    if (sort === "asc") filtered.sort((a, b) => a.price - b.price);
+    if (sort === "desc") filtered.sort((a, b) => b.price - a.price);
+
+    const start = (currentPage - 1) * itemsPerPage;
+    const paginated = filtered.slice(start, start + itemsPerPage);
+
+    const grid = document.getElementById("productGrid");
+    grid.innerHTML = "";
+
+    paginated.forEach(product => {
+      const isWishlisted = isInWishlist(product.name);
+      const review = localStorage.getItem("review_" + product.name) || "";
+      const stars = "⭐".repeat(product.rating);
+
+      const card = document.createElement("div");
+      card.className = "bg-white rounded-lg shadow-lg p-4 hover:shadow-xl transition-transform hover:scale-105";
+
+      card.innerHTML = `
+        <img src="${product.image}" alt="${product.name}" class="w-full h-48 object-contain mb-4 cursor-pointer" onclick="openModal('${product.name}')">
+        <div onclick="location.href='product.html?id=${product.id}'">
+        <h2 class="text-lg font-semibold">${product.name}</h2>
+        <p class="text-yellow-500">${stars}</p>
+        <p class="text-green-600 font-bold text-lg">₹${Number(product.price).toLocaleString()}</p>
+        </div>
+        <div class="flex gap-2 mt-3">
+          <button onclick="addToCart('${product.name}', ${product.price})" class="flex-1 bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600">Add to Cart</button>
+          <button onclick="toggleWishlist('${product.name}')" class="text-xl ${isWishlisted ? 'text-red-500' : 'text-gray-400'} hover:text-red-600">❤️</button>
+        </div>
+        ${review ? `<p class="mt-2 text-sm text-gray-700">🗨️ Review: ${review}</p>` : ""}
+      `;
+      grid.appendChild(card);
+    });
+
+    updateCartCount();
+  }
+
+  function addToCart(name, price) {
+    cart.push({ name, price });
+    localStorage.setItem("cart", JSON.stringify(cart));
+    updateCartCount();
+    alert(`${name} has been added to cart!`);
+  }
+
+  function updateCartCount() {
+    document.getElementById("cartCount").innerText = cart.length;
+  }
+
+  function toggleWishlist(name) {
+    let wishlist = JSON.parse(localStorage.getItem("wishlist") || "[]");
+    if (wishlist.includes(name)) {
+      wishlist = wishlist.filter(item => item !== name);
+    } else {
+      wishlist.push(name);
+    }
+    localStorage.setItem("wishlist", JSON.stringify(wishlist));
+    renderProducts();
+  }
+
+  function isInWishlist(name) {
+    const wishlist = JSON.parse(localStorage.getItem("wishlist") || "[]");
+    return wishlist.includes(name);
+  }
+
+  function openModal(name) {
+    const product = products.find(p => p.name === name);
+    document.getElementById("modalName").innerText = product.name;
+    document.getElementById("modalPrice").innerText = `₹${Number(product.price).toLocaleString()}`;
+    document.getElementById("modalImage").src = product.image;
+    document.getElementById("modalReview").value = localStorage.getItem("review_" + name) || "";
+    document.getElementById("savedReview").innerText = "";
+    const modal = document.getElementById("productModal");
+    modal.classList.remove("hidden");
+    modal.style.display = "flex";
+  }
+
+  function closeModal() {
+    document.getElementById("productModal").style.display = "none";
+  }
+
+  function saveReview() {
+    const name = document.getElementById("modalName").innerText;
+    const review = document.getElementById("modalReview").value;
+    localStorage.setItem("review_" + name, review);
+    document.getElementById("savedReview").innerText = "✅ Review saved!";
+    renderProducts();
+  }
+
+  function nextPage() {
+    currentPage++;
+    renderProducts();
+  }
+
+  function prevPage() {
+    if (currentPage > 1) {
+      currentPage--;
+      renderProducts();
+    }
+  }
+
+  // ⏳ Start by fetching from backend
+  fetchProducts();
+</script>
+</div>
+</body>
+</html>
+

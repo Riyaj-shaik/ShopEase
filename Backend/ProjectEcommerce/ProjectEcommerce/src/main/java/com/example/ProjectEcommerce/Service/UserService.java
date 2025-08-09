@@ -1,0 +1,28 @@
+package com.example.ProjectEcommerce.Service;
+
+import com.example.ProjectEcommerce.Entity.User;
+import com.example.ProjectEcommerce.Repository.UserRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+@Service
+public class UserService {
+
+    @Autowired
+    private UserRepository userRepository;
+
+    // ✅ For Login
+    public User authenticate(String email, String password) {
+        return userRepository.findByEmailAndPassword(email, password);
+    }
+
+    // ✅ For Registration
+    public User register(User user) {
+        return userRepository.save(user);
+    }
+
+    // ✅ Optional: Find by email
+    public User findByEmail(String email) {
+        return userRepository.findByEmail(email);
+    }
+}

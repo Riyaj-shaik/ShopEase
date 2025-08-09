@@ -1,0 +1,63 @@
+package com.example.ProjectEcommerce.Controller;
+
+import com.example.ProjectEcommerce.Entity.Product;
+import com.example.ProjectEcommerce.Repository.ProductRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/products")
+// Allow all frontend requests (you can restrict to your domain)
+public class ProductController {
+
+    @Autowired
+    private ProductRepository productRepository;
+
+    @GetMapping
+    public List<Product> getAllProducts() {
+        return productRepository.findAll();
+    }
+    
+    @GetMapping("/{id}")
+    public ResponseEntity<Product> getProductById(@PathVariable Long id) {
+      return productRepository.findById(id)
+              .map(ResponseEntity::ok)
+              .orElse(ResponseEntity.notFound().build());
+    }
+    
+    @PostMapping
+    public Product createProduct(@RequestBody Product product) {
+        return productRepository.save(product);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Product> updateProduct(@PathVariable Long id, @RequestBody Product productDetails) {
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Product not found"));
+
+        product.setName(productDetails.getName());
+        product.setDescription(productDetails.getDescription());
+        product.setPrice(productDetails.getPrice());
+        product.setQuantity(productDetails.getQuantity());
+        product.setCategory(productDetails.getCategory());
+        product.setImageUrl(productDetails.getImageUrl());
+
+        return ResponseEntity.ok(productRepository.save(product));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteProduct(@PathVariable Long id) {
+        productRepository.deleteById(id);
+        return ResponseEntity.ok().build();
+    }
+    
+    
+    @PostMapping("/bulk")
+    public List<Product> addProducts(@RequestBody List<Product> products) {
+        return productRepository.saveAll(products);
+    }
+    
+}

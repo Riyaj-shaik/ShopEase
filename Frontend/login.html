@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Login/Signup Form</title>
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet"/>
+</head>
+<body>
+  <div class="container">
+    <!-- Login Form -->
+    <div class="form-box login">
+      <form id="loginForm">
+        <h1>Login</h1>
+        <div class="input-box">
+          <input type="email" placeholder="Email" id="loginEmail" required />
+          <i class="bx bxs-user"></i>
+        </div>
+        <div class="input-box">
+          <input type="password" placeholder="Password" id="loginPassword" required />
+          <i class="bx bxs-lock-alt"></i>
+        </div>
+        <div class="forgot-link">
+          <a href="#">Forgot Password?</a>
+        </div>
+        <button type="submit" class="btn">Login</button>
+        <p id="loginMessage"></p>
+        <p>or login with social platforms</p>
+        <div class="social-icons">
+          <a href="#"><i class="bx bxl-google"></i></a>
+          <a href="#"><i class="bx bxl-facebook"></i></a>
+        </div>
+      </form>
+    </div>
+
+    <!-- Register Form -->
+    <div class="form-box register">
+      <form id="registerForm">
+        <h1>Registration</h1>
+        <div class="input-box">
+          <input type="text" placeholder="Username" id="regUsername" required />
+          <i class="bx bxs-user"></i>
+        </div>
+        <div class="input-box">
+          <input type="email" placeholder="Email" id="regEmail" required />
+          <i class="bx bxs-envelope"></i>
+        </div>
+        <div class="input-box">
+          <input type="password" placeholder="Password" id="regPassword" required />
+          <i class="bx bxs-lock-alt"></i>
+        </div>
+        <div class="input-box">
+          <select class="select-role" id="regRole" required>
+            <option value="" disabled selected>Select Role</option>
+            <option value="USER">User</option>
+            <option value="ADMIN">Admin</option>
+          </select>
+          <i class="bx bxs-id-card"></i>
+        </div>
+        <button type="submit" class="btn">Register</button>
+        <p id="registerMessage"></p>
+        <p>or register with social platforms</p>
+        <div class="social-icons">
+          <a href="#"><i class="bx bxl-google"></i></a>
+          <a href="#"><i class="bx bxl-facebook"></i></a>
+        </div>
+      </form>
+    </div>
+
+    <!-- Toggle Panels -->
+    <div class="toggle-box">
+      <div class="toggle-panel toggle-left">
+        <h1>Hello, Welcome!</h1>
+        <p>Don't have an account?</p>
+        <button class="btn register-btn">Register</button>
+      </div>
+      <div class="toggle-panel toggle-right">
+        <h1>Welcome Back!</h1>
+        <p>Already have an account?</p>
+        <button class="btn login-btn">Login</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JS Script -->
+  <script>
+    // Register Handler
+    document.getElementById("registerForm").addEventListener("submit", async function (e) {
+      e.preventDefault();
+      const user = {
+        username: document.getElementById("regUsername").value,
+        email: document.getElementById("regEmail").value,
+        password: document.getElementById("regPassword").value,
+        role: document.getElementById("regRole").value
+      };
+
+      try {
+        const response = await fetch("http://localhost:8080/api/auth/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(user),
+          credentials: "include"
+        });
+
+        const message = await response.text();
+        document.getElementById("registerMessage").textContent = message;
+
+        if (response.ok) {
+          // Clear fields
+          document.getElementById("regUsername").value = "";
+          document.getElementById("regEmail").value = "";
+          document.getElementById("regPassword").value = "";
+          document.getElementById("regRole").value = "";
+
+          // Redirect to login form after short delay
+          setTimeout(() => {
+            document.querySelector(".btn.login-btn").click();
+            document.getElementById("registerMessage").textContent = "";
+          }, 1500);
+        }
+      } catch (err) {
+        document.getElementById("registerMessage").textContent = "Registration failed.";
+      }
+    });
+
+    // Login Handler
+    document.getElementById("loginForm").addEventListener("submit", async function (e) {
+      e.preventDefault();
+      const user = {
+        email: document.getElementById("loginEmail").value,
+        password: document.getElementById("loginPassword").value
+      };
+
+      try {
+        const response = await fetch("http://localhost:8080/api/auth/login", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify(user),
+  credentials: "include"  // ✅ This sends the session cookie (JSESSIONID)
+        });
+
+        const message = await response.text();
+        document.getElementById("loginMessage").textContent = message;
+
+        if (response.ok) {
+          // Clear fields
+          document.getElementById("loginEmail").value = "";
+          document.getElementById("loginPassword").value = "";
+
+          // Redirect to homepage
+          setTimeout(() => {
+            window.location.href = "home.html";
+          }, 1500);
+        }
+      } catch (err) {
+        document.getElementById("loginMessage").textContent = "Login failed.";
+      }
+    });
+
+    // Toggle logic for form switching
+    document.querySelector(".register-btn").addEventListener("click", () => {
+      document.querySelector(".container").classList.add("active");
+    });
+
+    document.querySelector(".login-btn").addEventListener("click", () => {
+      document.querySelector(".container").classList.remove("active");
+    });
+  </script>
+</body>
+</html>

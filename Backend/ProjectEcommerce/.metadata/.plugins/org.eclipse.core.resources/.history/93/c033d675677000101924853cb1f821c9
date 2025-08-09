@@ -1,0 +1,28 @@
+package com.example.ProjectEcommerce.Config;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.web.SecurityFilterChain;
+
+@Configuration
+public class SecurityConfig {
+
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http
+            .csrf(csrf -> csrf.disable()) // ✅ Disable CSRF for API usage
+            .authorizeHttpRequests(auth -> auth
+                .requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/session").permitAll() // public auth endpoints
+                .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll() // allow public GET products
+                .requestMatchers("/admin/**").hasRole("ADMIN") // admin endpoints require ADMIN
+                .anyRequest().authenticated()
+            )
+            .formLogin(form -> form.disable()) // ❌ disable default Spring login
+            .httpBasic(httpBasic -> httpBasic.disable()) // ❌ disable basic auth
+            .logout(logout -> logout.logoutUrl("/api/auth/logout").deleteCookies("JSESSIONID")); // ✅ session logout
+
+        return http.build();
+    }
+}

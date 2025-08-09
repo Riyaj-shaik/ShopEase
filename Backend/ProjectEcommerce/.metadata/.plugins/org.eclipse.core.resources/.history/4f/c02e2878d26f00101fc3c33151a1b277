@@ -1,0 +1,15 @@
+package com.example.ProjectEcommerce.Config;
+
+import org.springframework.boot.web.servlet.server.CookieSameSiteSupplier;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+public class CookieConfig {
+
+    @Bean
+    public CookieSameSiteSupplier applicationCookieSameSiteSupplier() {
+        // Forces JSESSIONID to SameSite=None so frontend can access cross-origin
+        return CookieSameSiteSupplier.ofNone();
+    }
+}

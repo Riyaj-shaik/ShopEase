@@ -1,0 +1,27 @@
+package com.example.ProjectEcommerce.Config;
+
+import jakarta.servlet.SessionCookieConfig;
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.ServletException;
+import org.springframework.boot.web.servlet.ServletContextInitializer;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+public class CookieConfig {
+
+    @Bean
+    public ServletContextInitializer cookieInitializer() {
+        return new ServletContextInitializer() {
+            @Override
+            public void onStartup(ServletContext servletContext) throws ServletException {
+                SessionCookieConfig sessionCookieConfig = servletContext.getSessionCookieConfig();
+                sessionCookieConfig.setHttpOnly(true);
+                sessionCookieConfig.setSecure(true);  // 🔹 required for SameSite=None
+                sessionCookieConfig.setName("JSESSIONID");
+                // Spring Boot ≤ 3.1 does not directly support SameSite in SessionCookieConfig
+                // We will add SameSite=None using Tomcat cookie processor below
+            }
+        };
+    }
+}
